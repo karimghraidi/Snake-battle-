@@ -1,0 +1,57 @@
+name: Build APK (No Ads)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Build APK (No Ads flavor)
+        run: flutter build apk --flavor noads --release
+      
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snake-battle-noads-apk
+          path: build/app/outputs/flutter-apk/app-noads-release.apk
+          retention-days: 30
+
+      - name: Create Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/app/outputs/flutter-apk/app-noads-release.apk
+          tag_name: v${{ github.run_number }}-noads
+          body: |
+            ## Snake Battle - Ad-Free Test Build
+            
+            Build #${{ github.run_number }}
+            
+            **No Ads** | **For Testing**
+            
+            This is an ad-free build for testing purposes.
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
